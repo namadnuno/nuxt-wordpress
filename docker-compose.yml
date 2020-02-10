@@ -1,0 +1,55 @@
+version: '3.3'
+services:
+  db:
+    image: 'mysql:5.7'
+    volumes:
+      - 'db_data:/var/lib/mysql'
+    restart: always
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: somewordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+  wordpress:
+    container_name: wordpress
+    depends_on:
+      - db
+    image: 'wordpress:latest'
+    volumes:
+      - './themes:/var/www/html/wp-content/themes'
+      - './plugins:/var/www/html/wp-content/plugins'
+      - './wordpress:/var/www/html'
+    ports:
+      - '8000:80'
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: 'db:3306'
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+  nuxt:
+    depends_on:
+      - wordpress
+    build: ./frontend/
+    container_name: frontend
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      HOST: 0.0.0.0
+    volumes:
+      - './frontend:/frontend'
+    command:
+      yarn dev
+  nginx:
+    image: 'nginx:1.13'
+    container_name: nginx
+    ports:
+      - '80:80'
+    volumes:
+      - './nginx:/etc/nginx/conf.d'
+    depends_on:
+      - nuxt
+volumes:
+  db_data:
