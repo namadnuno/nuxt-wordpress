@@ -1,55 +1,53 @@
-version: '3.3'
+version: "3.3"
 services:
-  db:
-    image: 'mysql:5.7'
-    volumes:
-      - 'db_data:/var/lib/mysql'
-    restart: always
+  mysql:
+    image: "mysql:5.7"
     container_name: mysql
+    ports:
+      - "3306:3306"
+    restart: on-failure
     environment:
       MYSQL_ROOT_PASSWORD: somewordpress
       MYSQL_DATABASE: wordpress
       MYSQL_USER: wordpress
       MYSQL_PASSWORD: wordpress
-  wordpress:
-    container_name: wordpress
-    depends_on:
-      - db
-    image: 'wordpress:latest'
     volumes:
-      - './themes:/var/www/html/wp-content/themes'
-      - './plugins:/var/www/html/wp-content/plugins'
-      - './wordpress:/var/www/html'
+      - ./mysql:/docker-entrypoint-initdb.d
+  wordpress:
+    image: "wordpress:latest"
+    container_name: wordpress
     ports:
-      - '8000:80'
-    restart: always
+      - "8000:80"
+    restart: on-failure
+    depends_on:
+      - mysql
     environment:
-      WORDPRESS_DB_HOST: 'db:3306'
+      WORDPRESS_DB_HOST: "mysql:3306"
+      WORDPRESS_DB_NAME: wordpress
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
-      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - "./wordpress:/var/www/html"
   nuxt:
-    depends_on:
-      - wordpress
     build: ./frontend/
     container_name: frontend
-    restart: always
     ports:
-      - '3000:3000'
+      - "3000:3000"
+    restart: on-failure
+    depends_on:
+      - wordpress
     environment:
       HOST: 0.0.0.0
     volumes:
-      - './frontend:/frontend'
-    command:
-      yarn dev
+      - "./frontend:/frontend"
+    command: yarn dev
   nginx:
-    image: 'nginx:1.13'
+    image: "nginx:1.13"
     container_name: nginx
     ports:
-      - '80:80'
-    volumes:
-      - './nginx:/etc/nginx/conf.d'
+      - "80:80"
+    restart: on-failure
     depends_on:
       - nuxt
-volumes:
-  db_data:
+    volumes:
+      - "./nginx:/etc/nginx/conf.d"
