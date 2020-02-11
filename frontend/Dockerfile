@@ -1,12 +1,11 @@
 FROM node:13.8
 
+# Dependencies cache
 RUN mkdir frontend
-ADD . frontend
-WORKDIR /frontend
+COPY package.json yarn.lock frontend/
+WORKDIR /frontend/
+RUN yarn install
 
-RUN npm i nuxt -g
-RUN yarn
-#RUN yarn start
-
-
-ENV HOST 0.0.0.0
+# Code cache
+COPY . frontend/
+CMD [ "yarn dev" ]
